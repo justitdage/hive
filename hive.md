@@ -228,3 +228,32 @@ hive> show partitions order_dynamic_partition;
  
 ```
 
+### 日期函数
+
+```sql
+1.时间戳转时间
+from_unixtime(bigint unixtime[, string format]) 转成string
+hive> select from_unixtime(1323308943, 'yyyyMMdd') from tableName;
+20111208
+
+2.获取当前时间戳
+unix_timestamp()
+hive> select unix_timestamp() from tableName;
+1323309615
+
+hive> select unix_timestamp('2011-12-07 13:01:03') from tableName;
+1323234063
+
+3.指定时间转时间戳
+unix_timestamp(string date, string pattern)
+hive> select unix_timestamp('20111207 13:01:03','yyyyMMdd HH:mm:ss') from tableName;
+1323234063
+
+4to_date
+hive> select to_date('2011-12-08 10:03:01') from tableName;
+2011-12-08
+
+```
+
+
+
