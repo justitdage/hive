@@ -255,5 +255,160 @@ hive> select to_date('2011-12-08 10:03:01') from tableName;
 
 ```
 
+​	
+
+### 字符串函数
+
+```shell
+字符串长度函数：length
+hive> select length('abcedfg') from tableName;
+
+字符串反转函数：reverse
+hive> select reverse('abcedfg') from tableName;
+gfdecba
+
+字符串连接函数：concat
+hive> select concat('abc','def','gh') from tableName;
+abcdefgh
+
+字符串连接并指定字符串分隔符：concat_ws
+hive> select concat_ws(',','abc','def','gh') from tableName;
+abc,def,gh
+
+字符串截取函数：substr
+hive> select substr('abcde',3) from tableName;
+cde
+hive> select substring('abcde',3) from tableName;
+cde
+hive> select substr('abcde',-1) from tableName;  （和ORACLE相同）
+e
+
+字符串截取函数：substr, substring 
+hive> select substr('abcde',3,2) from tableName;
+cd
+hive> select substring('abcde',3,2) from tableName;
+cd
+hive>select substring('abcde',-3,2) from tableName;
+cd
+
+字符串转大写函数：upper, ucase  
+字符串转小写函数：lower, lcase 
+
+去空格函数：trim 
+
+url解析函数  parse_url
 
 
+```
+
+​	
+
+### 行转列
+
+```shell
+CONCAT(string A/col, string B/col…)：返回输入字符串连接后的结果，支持任意个输入字符串;
+
+CONCAT_WS(separator, str1, str2,...)：它是一个特殊形式的 CONCAT()。
+
+COLLECT_SET(col)：函数只接受基本数据类型，它的主要作用是将某字段的值进行去重汇总，产生**array**类型字段。
+```
+
+
+
+### 列转行
+
+```shell
+EXPLODE(col)：将hive一列中复杂的array或者map结构拆分成多行。
+
+LATERAL VIEW
+
+- 用法：LATERAL VIEW udtf(expression) tableAlias AS columnAlias
+- 解释：用于和split, explode等UDTF一起使用，它能够将一列数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合。
+
+
+《疑犯追踪》	悬疑,动作,科幻,剧情
+《Lie to me》	悬疑,警匪,动作,心理,剧情
+《战狼2》	战争,动作,灾难
+
+hive (hive_explode)> select movie, category_name from movie_info 
+lateral view explode(category) table_tmp as category_name;
+
+《疑犯追踪》	悬疑
+《疑犯追踪》	动作
+《疑犯追踪》	科幻
+《疑犯追踪》	剧情
+《Lie to me》	悬疑
+《Lie to me》	警匪
+《Lie to me》	动作
+《Lie to me》	心理
+《Lie to me》	剧情
+《战狼2》	战争
+《战狼2》	动作
+《战狼2》	灾难
+
+
+```
+
+### reflect函数
+
+```shell
+reflect函数可以支持在sql中调用java中的自带函数，秒杀一切udf函数。
+
+hive (hive_explode)> select reflect("java.lang.Math","max", col1, col2) from test_udf;
+
+hive (hive_explode)> select reflect("org.apache.commons.lang.math.NumberUtils", "isNumber", "123");
+
+```
+
+
+
+### topN
+
+```shell
+1、ROW_NUMBER()：
+
+- 从1开始，按照顺序，给分组内的记录加序列；
+  - 比如，按照pv降序排列，生成分组内每天的pv名次,ROW_NUMBER()的应用场景非常多
+  - 再比如，获取分组内排序第一的记录;
+  - 获取一个session中的第一条refer等。 
+
+2、RANK() ：
+
+- 生成数据项在分组中的排名，排名相等会在名次中留下空位 
+
+3、DENSE_RANK() ：
+
+- 生成数据项在分组中的排名，排名相等会在名次中不会留下空位 
+
+4、CUME_DIST ：
+
+- 小于等于当前值的行数/分组内总行数。比如，统计小于等于当前薪水的人数，所占总人数的比例 
+
+5、PERCENT_RANK ：
+
+- 分组内当前行的RANK值/分组内总行数
+
+6、NTILE(n) ：
+
+- 用于将分组数据按照顺序切分成n片，返回当前切片值
+- 如果切片不均匀，默认增加第一个切片的分布。
+- NTILE不支持ROWS BETWEEN，比如 NTILE(2) OVER(PARTITION BY cookieid ORDER BY createtime ROWS BETWEEN 3 PRECEDING AND CURRENT ROW)
+
+
+select * from (
+SELECT 
+cookieid,
+createtime,
+pv,
+RANK() OVER(PARTITION BY cookieid ORDER BY pv desc) AS rn1,
+DENSE_RANK() OVER(PARTITION BY cookieid ORDER BY pv desc) AS rn2,
+ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY pv DESC) AS rn3 
+FROM cookie_pv 
+) temp where temp.rn1 <= 3;
+
+
+```
+
+
+
+​	
